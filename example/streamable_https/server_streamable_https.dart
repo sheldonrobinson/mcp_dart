@@ -261,7 +261,7 @@ void main() async {
   final transports = <String, StreamableHTTPServerTransport>{};
 
   // Create HTTP server
-  final server = await HttpServer.bind(InternetAddress.anyIPv4, 3000);
+  final server = await HttpServer.bind(InternetAddress.anyIPv4, 3111);
   print('MCP Streamable HTTP Server listening on port 3000');
 
   await for (final request in server) {
