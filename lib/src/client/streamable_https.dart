@@ -9,11 +9,11 @@ import 'package:mcp_dart/src/types.dart';
 /// Default reconnection options for StreamableHTTP connections
 const _defaultStreamableHttpReconnectionOptions =
     StreamableHttpReconnectionOptions(
-  initialReconnectionDelay: 1000,
-  maxReconnectionDelay: 30000,
-  reconnectionDelayGrowFactor: 1.5,
-  maxRetries: 2,
-);
+      initialReconnectionDelay: 1000,
+      maxReconnectionDelay: 30000,
+      reconnectionDelayGrowFactor: 1.5,
+      maxRetries: 2,
+    );
 
 /// Error thrown for Streamable HTTP issues
 class StreamableHttpError extends Error {
@@ -142,13 +142,14 @@ class StreamableHttpClientTransport implements Transport {
   StreamableHttpClientTransport(
     Uri url, {
     StreamableHttpClientTransportOptions? opts,
-  })  : _url = url,
-        _requestInit = opts?.requestInit,
-        _authProvider = opts?.authProvider,
-        _sessionId = opts?.sessionId,
-        _reconnectionOptions = opts?.reconnectionOptions ??
-            _defaultStreamableHttpReconnectionOptions,
-        _httpClient = http.Client();
+  }) : _url = url,
+       _requestInit = opts?.requestInit,
+       _authProvider = opts?.authProvider,
+       _sessionId = opts?.sessionId,
+       _reconnectionOptions =
+           opts?.reconnectionOptions ??
+           _defaultStreamableHttpReconnectionOptions,
+       _httpClient = http.Client();
 
   Future<void> _authThenStart() async {
     if (_authProvider == null) {
@@ -256,9 +257,10 @@ class StreamableHttpClientTransport implements Transport {
     final maxDelay = _reconnectionOptions.maxReconnectionDelay;
 
     // Cap at maximum delay
-    return (initialDelay * math.pow(growFactor, attempt))
-        .round()
-        .clamp(0, maxDelay);
+    return (initialDelay * math.pow(growFactor, attempt)).round().clamp(
+      0,
+      maxDelay,
+    );
   }
 
   /// Schedule a reconnection attempt with exponential backoff
@@ -272,7 +274,8 @@ class StreamableHttpClientTransport implements Transport {
     // Check if we've exceeded maximum retry attempts
     if (maxRetries > 0 && attemptCount >= maxRetries) {
       onerror?.call(
-          McpError(0, "Maximum reconnection attempts ($maxRetries) exceeded."));
+        McpError(0, "Maximum reconnection attempts ($maxRetries) exceeded."),
+      );
       return;
     }
 
@@ -286,7 +289,8 @@ class StreamableHttpClientTransport implements Transport {
         final errorMessage =
             error is Error ? error.toString() : error.toString();
         onerror?.call(
-            McpError(0, "Failed to reconnect SSE stream: $errorMessage"));
+          McpError(0, "Failed to reconnect SSE stream: $errorMessage"),
+        );
 
         // Schedule another attempt if this one failed, incrementing the attempt counter
         _scheduleReconnection(options, attemptCount + 1);
@@ -325,9 +329,10 @@ class StreamableHttpClientTransport implements Transport {
           if (replayMessageId != null && message is JsonRpcResponse) {
             // Create a new response with the same data but different ID
             final newMessage = JsonRpcResponse(
-                id: replayMessageId,
-                result: message.result,
-                meta: message.meta);
+              id: replayMessageId,
+              result: message.result,
+              meta: message.meta,
+            );
             onmessage?.call(newMessage);
           } else {
             onmessage?.call(message);
@@ -352,11 +357,13 @@ class StreamableHttpClientTransport implements Transport {
       if (_abortController != null && !_abortController!.isClosed) {
         if (eventId != null) {
           try {
-            _scheduleReconnection(StartSseOptions(
-              resumptionToken: eventId,
-              onResumptionToken: onResumptionToken,
-              replayMessageId: replayMessageId,
-            ));
+            _scheduleReconnection(
+              StartSseOptions(
+                resumptionToken: eventId,
+                onResumptionToken: onResumptionToken,
+                replayMessageId: replayMessageId,
+              ),
+            );
           } catch (error) {
             final errorMessage =
                 error is Error ? error.toString() : error.toString();
@@ -370,72 +377,77 @@ class StreamableHttpClientTransport implements Transport {
     final broadcastStream = stream.stream;
 
     // Create a subscription to the stream
-    final subscription =
-        broadcastStream.transform(utf8.decoder).asBroadcastStream().listen(
-      (data) {
-        buffer += data;
+    final subscription = broadcastStream
+        .transform(utf8.decoder)
+        .asBroadcastStream()
+        .listen(
+          (data) {
+            buffer += data;
 
-        // Process the buffer line by line
-        while (buffer.contains('\n')) {
-          final index = buffer.indexOf('\n');
-          var line = buffer.substring(0, index);
-          if (line.endsWith('\r')) {
-            line = line.substring(0, line.length - 1);
-          }
-          buffer = buffer.substring(index + 1);
+            // Process the buffer line by line
+            while (buffer.contains('\n')) {
+              final index = buffer.indexOf('\n');
+              var line = buffer.substring(0, index);
+              if (line.endsWith('\r')) {
+                line = line.substring(0, line.length - 1);
+              }
+              buffer = buffer.substring(index + 1);
 
-          if (line.isEmpty) {
-            // Empty line means end of event
-            processEvent();
-            continue;
-          }
+              if (line.isEmpty) {
+                // Empty line means end of event
+                processEvent();
+                continue;
+              }
 
-          if (line.startsWith(':')) {
-            // Comment line, ignore
-            continue;
-          }
+              if (line.startsWith(':')) {
+                // Comment line, ignore
+                continue;
+              }
 
-          final colonIndex = line.indexOf(':');
-          if (colonIndex > 0) {
-            final field = line.substring(0, colonIndex);
-            // The value starts after colon + optional space
-            final valueStart = colonIndex +
-                1 +
-                (line.length > colonIndex + 1 && line[colonIndex + 1] == ' '
-                    ? 1
-                    : 0);
-            final value = line.substring(valueStart);
+              final colonIndex = line.indexOf(':');
+              if (colonIndex > 0) {
+                final field = line.substring(0, colonIndex);
+                // The value starts after colon + optional space
+                final valueStart =
+                    colonIndex +
+                    1 +
+                    (line.length > colonIndex + 1 && line[colonIndex + 1] == ' '
+                        ? 1
+                        : 0);
+                final value = line.substring(valueStart);
 
-            switch (field) {
-              case 'event':
-                eventName = value;
-                break;
-              case 'id':
-                eventId = value;
-                break;
-              case 'data':
-                eventData = (eventData ?? '') + value;
-                break;
+                switch (field) {
+                  case 'event':
+                    eventName = value;
+                    break;
+                  case 'id':
+                    eventId = value;
+                    break;
+                  case 'data':
+                    eventData = (eventData ?? '') + value;
+                    break;
+                }
+              }
             }
-          }
-        }
-      },
-      onDone: () {
-        // Process any final event
-        processEvent();
+          },
+          onDone: () {
+            // Process any final event
+            processEvent();
 
-        // Handle stream closure - likely a network disconnect
-        handleReconnection(lastEventId, "Stream closed");
-      },
-      onError: (error) {
-        final errorMessage =
-            error is Error ? error.toString() : error.toString();
-        onerror?.call(McpError(0, "SSE stream disconnected: $errorMessage"));
+            // Handle stream closure - likely a network disconnect
+            handleReconnection(lastEventId, "Stream closed");
+          },
+          onError: (error) {
+            final errorMessage =
+                error is Error ? error.toString() : error.toString();
+            onerror?.call(
+              McpError(0, "SSE stream disconnected: $errorMessage"),
+            );
 
-        // Attempt to reconnect if the stream disconnects unexpectedly
-        handleReconnection(lastEventId, errorMessage);
-      },
-    );
+            // Attempt to reconnect if the stream disconnects unexpectedly
+            handleReconnection(lastEventId, errorMessage);
+          },
+        );
 
     // Register the subscription cleanup when the abort controller is triggered
     _abortController?.stream.listen((_) {
@@ -446,8 +458,10 @@ class StreamableHttpClientTransport implements Transport {
   @override
   Future<void> start() async {
     if (_abortController != null) {
-      throw McpError(0,
-          "StreamableHttpClientTransport already started! If using Client class, note that connect() calls start() automatically.");
+      throw McpError(
+        0,
+        "StreamableHttpClientTransport already started! If using Client class, note that connect() calls start() automatically.",
+      );
     }
 
     _abortController = StreamController<bool>.broadcast();
@@ -461,8 +475,11 @@ class StreamableHttpClientTransport implements Transport {
       throw UnauthorizedError("No auth provider");
     }
 
-    final result = await auth(_authProvider!,
-        serverUrl: _url, authorizationCode: authorizationCode);
+    final result = await auth(
+      _authProvider!,
+      serverUrl: _url,
+      authorizationCode: authorizationCode,
+    );
     if (result != "AUTHORIZED") {
       throw UnauthorizedError("Failed to authorize");
     }
@@ -479,18 +496,22 @@ class StreamableHttpClientTransport implements Transport {
   }
 
   @override
-  Future<void> send(JsonRpcMessage message,
-      {String? resumptionToken,
-      void Function(String)? onResumptionToken}) async {
+  Future<void> send(
+    JsonRpcMessage message, {
+    String? resumptionToken,
+    void Function(String)? onResumptionToken,
+  }) async {
     try {
       if (resumptionToken != null) {
         // If we have a last event ID, we need to reconnect the SSE stream
         final replayId = message is JsonRpcRequest ? message.id : null;
-        _startOrAuthSse(StartSseOptions(
-          resumptionToken: resumptionToken,
-          replayMessageId: replayId,
-          onResumptionToken: onResumptionToken,
-        )).catchError((err) {
+        _startOrAuthSse(
+          StartSseOptions(
+            resumptionToken: resumptionToken,
+            replayMessageId: replayId,
+            onResumptionToken: onResumptionToken,
+          ),
+        ).catchError((err) {
           if (err is Error) {
             onerror?.call(err);
           } else {
@@ -514,7 +535,19 @@ class StreamableHttpClientTransport implements Transport {
       headers['content-type'] = 'application/json';
       headers['accept'] = 'application/json, text/event-stream';
 
-      final request = http.Request('POST', _url);
+      final parameters = message.toJson();
+      final method = (parameters['method'] ?? '') as String;
+      final httpMethod = switch (method) {
+        'prompts/list' => 'GET',
+        'roots/list' => 'GET',
+        'resources/list' => 'GET',
+        'resources/templates/list' => 'GET',
+        'tools/list' => 'GET',
+        'ping' => 'GET',
+        _ => 'POST',
+      };
+
+      final request = http.Request(httpMethod, _url);
       request.headers.addAll(headers);
       request.body = jsonEncode(message.toJson());
 
@@ -534,8 +567,10 @@ class StreamableHttpClientTransport implements Transport {
         }
 
         final text = await response.stream.transform(utf8.decoder).join();
-        throw McpError(0,
-            "Error POSTing to endpoint (HTTP ${response.statusCode}): $text");
+        throw McpError(
+          0,
+          "Error POSTing to endpoint (HTTP ${response.statusCode}): $text",
+        );
       }
 
       // If the response is 202 Accepted, there's no body to process
@@ -565,7 +600,9 @@ class StreamableHttpClientTransport implements Transport {
         if (contentType?.contains('text/event-stream') ?? false) {
           // Handle SSE stream responses for requests
           _handleSseStream(
-              response, StartSseOptions(onResumptionToken: onResumptionToken));
+            response,
+            StartSseOptions(onResumptionToken: onResumptionToken),
+          );
         } else if (contentType?.contains('application/json') ?? false) {
           // For non-streaming servers, we might get direct JSON responses
           final jsonStr = await response.stream.transform(utf8.decoder).join();
@@ -623,8 +660,10 @@ class StreamableHttpClientTransport implements Transport {
       // meaning the server does not support explicit session termination
       if (response.statusCode < 200 ||
           response.statusCode >= 300 && response.statusCode != 405) {
-        throw StreamableHttpError(response.statusCode,
-            "Failed to terminate session: ${response.reasonPhrase}");
+        throw StreamableHttpError(
+          response.statusCode,
+          "Failed to terminate session: ${response.reasonPhrase}",
+        );
       }
 
       _sessionId = null;
@@ -675,8 +714,11 @@ class OAuthTokens {
 typedef AuthResult = String; // "AUTHORIZED" or other values
 
 /// Performs authentication with the provided OAuth client
-Future<AuthResult> auth(OAuthClientProvider provider,
-    {required Uri serverUrl, String? authorizationCode}) async {
+Future<AuthResult> auth(
+  OAuthClientProvider provider, {
+  required Uri serverUrl,
+  String? authorizationCode,
+}) async {
   // Simple implementation that would need to be expanded in a real implementation
   final tokens = await provider.tokens();
   if (tokens != null) {
