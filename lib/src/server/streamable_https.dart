@@ -168,12 +168,8 @@ class StreamableHTTPServerTransport implements Transport {
   /// Handles GET requests for SSE stream
   Future<void> _handleGetRequest(HttpRequest req) async {
     // The client MUST include an Accept header, listing text/event-stream as a supported content type.
-    final acceptHeader = req.headers[HttpHeaders.acceptHeader];
-    if (acceptHeader == null ||
-        acceptHeader.indexWhere((item) {
-              return item.toLowerCase().contains("text/event-stream");
-            }) <
-            0) {
+    final acceptHeader = req.headers[HttpHeaders.acceptHeader] ?? <String>[];
+    if (acceptHeader.where((item) => item.toUpperCase().contains("text/event-stream"),).isEmpty) {
       req.response
         ..statusCode = HttpStatus.notAcceptable
         ..write(jsonEncode({
@@ -306,7 +302,6 @@ class StreamableHTTPServerTransport implements Transport {
       res.flush();
       return true;
     } catch (e) {
-      print(e);
       return false;
     }
   }
@@ -327,17 +322,10 @@ class StreamableHTTPServerTransport implements Transport {
   Future<void> _handlePostRequest(HttpRequest req, [dynamic parsedBody]) async {
     try {
       // Validate the Accept header
-      final acceptHeader = req.headers[HttpHeaders.acceptHeader];
+      final acceptHeader = req.headers[HttpHeaders.acceptHeader] ?? <String>[];
       // The client MUST include an Accept header, listing both application/json and text/event-stream as supported content types.
-      if (acceptHeader == null ||
-          acceptHeader.indexWhere((item) {
-                return item.toLowerCase().contains("application/json");
-              }) <
-              0 ||
-          acceptHeader.indexWhere((item) {
-                return item.toLowerCase().contains("text/event-stream");
-              }) <
-              0) {
+      if (acceptHeader.where((item) => item.toLowerCase().contains("application/json")).isEmpty ||
+          acceptHeader.where((item) => item.toLowerCase().contains("text/event-stream")).isEmpty) {
         req.response.statusCode = HttpStatus.notAcceptable;
         req.response.write(jsonEncode({
           "jsonrpc": "2.0",
