@@ -169,7 +169,7 @@ class StreamableHTTPServerTransport implements Transport {
   Future<void> _handleGetRequest(HttpRequest req) async {
     // The client MUST include an Accept header, listing text/event-stream as a supported content type.
     final acceptHeader = req.headers[HttpHeaders.acceptHeader] ?? <String>[];
-    if (acceptHeader.where((item) => item.toUpperCase().contains("text/event-stream"),).isEmpty) {
+    if (acceptHeader.where((item) => item.toLowerCase().contains("text/event-stream"),).isEmpty) {
       req.response
         ..statusCode = HttpStatus.notAcceptable
         ..write(jsonEncode({

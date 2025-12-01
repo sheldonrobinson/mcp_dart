@@ -535,19 +535,7 @@ class StreamableHttpClientTransport implements Transport {
       headers['content-type'] = 'application/json';
       headers['accept'] = 'application/json, text/event-stream';
 
-      final parameters = message.toJson();
-      final method = (parameters['method'] ?? '') as String;
-      final httpMethod = switch (method) {
-        'prompts/list' => 'GET',
-        'roots/list' => 'GET',
-        'resources/list' => 'GET',
-        'resources/templates/list' => 'GET',
-        'tools/list' => 'GET',
-        'ping' => 'GET',
-        _ => 'POST',
-      };
-
-      final request = http.Request(httpMethod, _url);
+      final request = http.Request('POST', _url);
       request.headers.addAll(headers);
       request.body = jsonEncode(message.toJson());
 
