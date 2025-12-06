@@ -174,7 +174,7 @@ class Client extends Protocol {
         requiredCapability = 'resources.subscribe';
         break;
       case "tools/call":
-      case "tools/listtools/list":
+      case "tools/list":
         supported = serverCaps.tools != null;
         requiredCapability = 'tools';
         break;
