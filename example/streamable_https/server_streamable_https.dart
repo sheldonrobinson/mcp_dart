@@ -269,14 +269,11 @@ void main() async {
   // Map to store transports by session ID
   final transports = <String, StreamableHTTPServerTransport>{};
 
-  int reqHit = 0;
-
   // Create HTTP server
   final server = await HttpServer.bind(InternetAddress.anyIPv4, 3000);
   print('MCP Streamable HTTP Server listening on port 3000');
 
   await for (final request in server) {
-    ++reqHit;
     // Apply CORS headers to all responses
     setCorsHeaders(request.response);
 
@@ -296,24 +293,6 @@ void main() async {
       continue;
     }
 
-    final currentHit = reqHit;
-    bool isDone = false;
-    print(
-      ">>> request: $currentHit ${request.method} ${request.uri.toString()}",
-    );
-    request.response.done.then((_) {
-      isDone = true;
-      print("<<<<<<< request done: $currentHit");
-    });
-    // if (request.method == "POST") {
-    //   Timer(Duration(seconds: 5), () async {
-    //     if (false == isDone) {
-    //       print("====== request force done: $currentHit");
-    //       request.response.close();
-    //     }
-    //   });
-    // }
-
     switch (request.method) {
       case 'OPTIONS':
         // Handle preflight requests
@@ -321,7 +300,7 @@ void main() async {
         await request.response.close();
         break;
       case 'POST':
-        await handlePostRequest(currentHit, request, transports);
+        await handlePostRequest(request, transports);
         break;
       case 'GET':
         await handleGetRequest(request, transports);
@@ -353,7 +332,6 @@ bool isInitializeRequest(dynamic body) {
 
 // Handle POST requests
 Future<void> handlePostRequest(
-  int hit,
   HttpRequest request,
   Map<String, StreamableHTTPServerTransport> transports,
 ) async {
@@ -364,8 +342,6 @@ Future<void> handlePostRequest(
     final bodyBytes = await collectBytes(request);
     final bodyString = utf8.decode(bodyBytes);
     final body = jsonDecode(bodyString);
-    bool isPing = bodyString.contains("/list");
-    print("reqdata $hit ${body}");
 
     // Check for existing session ID
     final sessionId = request.headers.value('mcp-session-id');
@@ -405,6 +381,8 @@ Future<void> handlePostRequest(
       await server.connect(transport);
 
       print('Handling initialization request for a new session');
+	  await transport.handleRequest(request, body);
+      return; 
     } else {
       // Invalid request - no session ID or not initialization request
       request.response
