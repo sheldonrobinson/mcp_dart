@@ -498,6 +498,7 @@ class StreamableHttpClientTransport implements Transport {
   @override
   Future<void> send(
     JsonRpcMessage message, {
+    int? relatedRequestId,
     String? resumptionToken,
     void Function(String)? onResumptionToken,
   }) async {
@@ -563,6 +564,11 @@ class StreamableHttpClientTransport implements Transport {
 
       // If the response is 202 Accepted, there's no body to process
       if (response.statusCode == 202) {
+        // Ensure we drain the stream to release the connection
+        await response.stream.drain();
+
+        await Future.delayed(Duration.zero);
+
         // if the accepted notification is initialized, we start the SSE stream
         // if it's supported by the server
         if (_isInitializedNotification(message)) {
@@ -576,6 +582,17 @@ class StreamableHttpClientTransport implements Transport {
           });
         }
         return;
+      }
+
+      // Start SSE if this was the initialized notification, even if 200 OK
+      if (_isInitializedNotification(message)) {
+        _startOrAuthSse(const StartSseOptions()).catchError((err) {
+          if (err is Error) {
+            onerror?.call(err);
+          } else {
+            onerror?.call(McpError(0, err.toString()));
+          }
+        });
       }
 
       // Check if the message is a request that expects a response
@@ -667,7 +684,10 @@ class StreamableHttpClientTransport implements Transport {
 
   // Helper method to check if a message is an initialized notification
   bool _isInitializedNotification(JsonRpcMessage message) {
-    return message is JsonRpcInitializedNotification;
+    if (message is JsonRpcNotification) {
+      return message.method == "notifications/initialized";
+    }
+    return false;
   }
 }
 
