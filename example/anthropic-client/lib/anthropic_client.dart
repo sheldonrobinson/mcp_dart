@@ -35,14 +35,13 @@ class AnthropicMcpClient {
       await mcp.connect(transport!);
 
       final toolsResult = await mcp.listTools();
-      tools =
-          toolsResult.tools.map((tool) {
-            return Tool.custom(
-              name: tool.name,
-              description: tool.description,
-              inputSchema: tool.inputSchema.toJson(),
-            );
-          }).toList();
+      tools = toolsResult.tools.map((tool) {
+        return Tool.custom(
+          name: tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema.toJson(),
+        );
+      }).toList();
 
       print(
         "Connected to server with tools: ${tools.map((t) => t.name).toList()}",

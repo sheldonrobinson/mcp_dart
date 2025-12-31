@@ -33,7 +33,7 @@ abstract class EventStore {
   Future<StreamId> replayEventsAfter(
     EventId lastEventId, {
     required Future<void> Function(EventId eventId, JsonRpcMessage message)
-        send,
+    send,
   });
 }
 
@@ -136,10 +136,10 @@ class StreamableHTTPServerTransport implements Transport {
   /// Creates a new StreamableHTTPServerTransport
   StreamableHTTPServerTransport({
     required StreamableHTTPServerTransportOptions options,
-  })  : _sessionIdGenerator = options.sessionIdGenerator,
-        _enableJsonResponse = options.enableJsonResponse,
-        _eventStore = options.eventStore,
-        _onsessioninitialized = options.onsessioninitialized;
+  }) : _sessionIdGenerator = options.sessionIdGenerator,
+       _enableJsonResponse = options.enableJsonResponse,
+       _eventStore = options.eventStore,
+       _onsessioninitialized = options.onsessioninitialized;
 
   /// Starts the transport. This is required by the Transport interface but is a no-op
   /// for the Streamable HTTP transport as connections are managed per-request.
@@ -791,8 +791,9 @@ class StreamableHTTPServerTransport implements Transport {
             headers['mcp-session-id'] = sessionId!;
           }
 
-          final responses =
-              relatedIds.map((id) => _requestResponseMap[id]!).toList();
+          final responses = relatedIds
+              .map((id) => _requestResponseMap[id]!)
+              .toList();
 
           headers.forEach((key, value) {
             response.headers.set(key, value);

@@ -66,20 +66,12 @@ McpServer getServer() {
     'greet',
     description: 'A simple greeting tool',
     inputSchema: JsonSchema.object(
-      properties: {
-        'name': JsonSchema.string(
-          description: 'Name to greet',
-        ),
-      },
+      properties: {'name': JsonSchema.string(description: 'Name to greet')},
       required: ['name'],
     ),
     callback: (args, extra) async {
       final name = args['name'] as String? ?? 'world';
-      return CallToolResult.fromContent(
-        [
-          TextContent(text: 'Hello, $name!'),
-        ],
-      );
+      return CallToolResult.fromContent([TextContent(text: 'Hello, $name!')]);
     },
   );
 
@@ -89,11 +81,7 @@ McpServer getServer() {
     description:
         'A tool that sends different greetings with delays between them',
     inputSchema: JsonSchema.object(
-      properties: {
-        'name': JsonSchema.string(
-          description: 'Name to greet',
-        ),
-      },
+      properties: {'name': JsonSchema.string(description: 'Name to greet')},
       required: [],
     ),
     annotations: const ToolAnnotations(
@@ -141,11 +129,9 @@ McpServer getServer() {
         ),
       );
 
-      return CallToolResult.fromContent(
-        [
-          TextContent(text: 'Good morning, $name!'),
-        ],
-      );
+      return CallToolResult.fromContent([
+        TextContent(text: 'Good morning, $name!'),
+      ]);
     },
   );
 
@@ -221,13 +207,11 @@ McpServer getServer() {
         await sleep(interval.toInt());
       }
 
-      return CallToolResult.fromContent(
-        [
-          TextContent(
-            text: 'Started sending periodic notifications every ${interval}ms',
-          ),
-        ],
-      );
+      return CallToolResult.fromContent([
+        TextContent(
+          text: 'Started sending periodic notifications every ${interval}ms',
+        ),
+      ]);
     },
   );
 
@@ -254,8 +238,10 @@ McpServer getServer() {
 
 void setCorsHeaders(HttpResponse response) {
   response.headers.set('Access-Control-Allow-Origin', '*'); // Allow any origin
-  response.headers
-      .set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  response.headers.set(
+    'Access-Control-Allow-Methods',
+    'GET, POST, DELETE, OPTIONS',
+  );
   response.headers.set(
     'Access-Control-Allow-Headers',
     'Origin, X-Requested-With, Content-Type, Accept, mcp-session-id, Last-Event-ID, Authorization',
@@ -381,8 +367,8 @@ Future<void> handlePostRequest(
       await server.connect(transport);
 
       print('Handling initialization request for a new session');
-	  await transport.handleRequest(request, body);
-      return; 
+      await transport.handleRequest(request, body);
+      return;
     } else {
       // Invalid request - no session ID or not initialization request
       request.response

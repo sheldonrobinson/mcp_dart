@@ -286,8 +286,9 @@ class StreamableHttpClientTransport implements Transport {
     Future.delayed(Duration(milliseconds: delay), () {
       // Use the last event ID to resume where we left off
       _startOrAuthSse(options).catchError((error) {
-        final errorMessage =
-            error is Error ? error.toString() : error.toString();
+        final errorMessage = error is Error
+            ? error.toString()
+            : error.toString();
         onerror?.call(
           McpError(0, "Failed to reconnect SSE stream: $errorMessage"),
         );
@@ -365,8 +366,9 @@ class StreamableHttpClientTransport implements Transport {
               ),
             );
           } catch (error) {
-            final errorMessage =
-                error is Error ? error.toString() : error.toString();
+            final errorMessage = error is Error
+                ? error.toString()
+                : error.toString();
             onerror?.call(McpError(0, "Failed to reconnect: $errorMessage"));
           }
         }
@@ -438,8 +440,9 @@ class StreamableHttpClientTransport implements Transport {
             handleReconnection(lastEventId, "Stream closed");
           },
           onError: (error) {
-            final errorMessage =
-                error is Error ? error.toString() : error.toString();
+            final errorMessage = error is Error
+                ? error.toString()
+                : error.toString();
             onerror?.call(
               McpError(0, "SSE stream disconnected: $errorMessage"),
             );
